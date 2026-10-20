@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Asite ACE — Enterprise AI Chat Prototype</title>
+<style>
+:root{--red:#e21f26;--ink:#17181a;--muted:#70747b;--line:#e6e7e9;--soft:#f5f6f7;--white:#fff}
+*{box-sizing:border-box} body{margin:0;background:#eef0f3;font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--ink)}
+.shell{width:470px;height:780px;background:#fff;position:relative;display:flex;flex-direction:column;overflow:hidden;border-radius:24px;box-shadow:0 18px 55px rgba(0,0,0,.18)}
+.header{height:72px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 17px;gap:11px;flex:none}
+.back{font-size:25px;color:#72767c;width:20px}.avatar{width:39px;height:39px;border:2px solid var(--red);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:850;color:var(--red);background:#fff}
+.htext{flex:1}.htext strong{font-size:16px;display:block}.status{font-size:11px;color:#16834b;margin-top:2px}.status:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#24a35a;margin-right:5px}
+.headicon{color:#73777c;font-size:20px;margin-left:5px;cursor:pointer}
+.messages{flex:1;overflow-y:auto;padding:18px 15px 20px;background:#fff;scroll-behavior:smooth}
+.day{text-align:center;color:#9a9da2;font-size:10px;margin:4px 0 16px}
+.row{display:flex;margin:0 0 7px}.row.user{justify-content:flex-end}
+.bubble{max-width:91%;padding:12px 14px;border-radius:18px;font-size:13.5px;line-height:1.48}
+.bot .bubble{background:#f0f1f3;border-top-left-radius:7px}.user .bubble{background:var(--red);color:#fff;border-top-right-radius:7px}
+.meta{font-size:9px;color:#a0a3a8;margin:0 4px 12px}.meta.user{text-align:right}
+.quick-title{font-size:12px;font-weight:700;margin:2px 0 8px}.quick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 16px}
+.qbtn{background:#fff;border:1px solid #dedfe2;border-radius:12px;padding:11px 10px;text-align:left;cursor:pointer;min-height:62px;font-size:12px}
+.qbtn:hover{border-color:var(--red);background:#fff9f9}.qicon{font-size:19px;display:block;margin-bottom:5px}.qsub{display:block;color:#777;font-size:10px;margin-top:2px}
+.card{background:#fff;border:1px solid #e0e1e4;border-radius:13px;padding:12px;margin:8px 0 12px}
+.card h4{margin:0 0 5px;font-size:13px}.desc{font-size:11px;color:#6c7076;line-height:1.45}
+.source{font-size:10px;color:#777;border-top:1px solid #eee;margin-top:9px;padding-top:7px}.source b{color:#444}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 14px}.chip{border:1px solid #ddd;background:#fff;border-radius:18px;padding:8px 10px;font-size:11px;cursor:pointer}.chip:hover{border-color:var(--red)}
+.form{margin:8px 0 14px;padding:12px;border:1px solid #e1e2e4;border-radius:13px}
+label{display:block;font-size:10px;font-weight:700;margin:9px 0 5px;color:#444}input,textarea,select{width:100%;font:inherit;font-size:11px;border:1px solid #d9dade;border-radius:8px;padding:9px;background:#fff}textarea{height:62px;resize:none}
+.primary,.secondary{width:100%;border-radius:9px;padding:10px;margin-top:9px;font-size:11px;font-weight:700;cursor:pointer}.primary{background:var(--red);border:1px solid var(--red);color:#fff}.secondary{background:#fff;border:1px solid #d9dade;color:#333}
+.notice{background:#f8f8f9;border:1px solid #e5e5e7;border-radius:11px;padding:9px;font-size:10px;color:#676b71;margin:8px 0}
+.feedback{display:flex;align-items:center;gap:7px;border-top:1px solid #eee;padding-top:8px;margin-top:8px;font-size:10px;color:#777}.fb{border:0;background:#f1f2f3;border-radius:7px;padding:5px 8px;cursor:pointer}
+.typing{display:flex;gap:4px;align-items:center;background:#f0f1f3;width:max-content;border-radius:17px;padding:11px 13px}.dot{width:5px;height:5px;border-radius:50%;background:#888;animation:b 1s infinite}.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}@keyframes b{50%{opacity:.25}}
+.composer{border-top:1px solid var(--line);padding:11px 14px 13px;background:#fff;flex:none}
+.input{height:52px;border:1px solid #dfe0e3;border-radius:15px;display:flex;align-items:center;padding:0 12px;color:#888;font-size:13px}.send{margin-left:auto;width:32px;height:32px;border-radius:50%;background:#e3e4e6;color:#fff;display:flex;align-items:center;justify-content:center}.tools{display:flex;gap:17px;color:#898d92;font-size:15px;padding:7px 3px 0}
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="header">
+ <div class="back">‹</div><div class="avatar">A</div>
+ <div class="htext"><strong>ACE</strong><span class="status">Online • AI Assistant</span></div>
+ <div class="headicon" onclick="restart()">↻</div><div class="headicon">•••</div><div class="headicon">×</div>
+</header>
+<main id="messages" class="messages"></main>
+<footer class="composer">
+ <div class="input">Ask ACE anything...<div class="send">↑</div></div>
+ <div class="tools">⌕ &nbsp;☺ &nbsp;GIF &nbsp;🎙</div>
+</footer>
+</div>
+<script>
+const M=document.getElementById('messages');
+function add(text,type='bot',meta=true){
+ M.insertAdjacentHTML('beforeend',`<div class="row ${type}"><div class="bubble">${text}</div></div>`);
+ if(meta)M.insertAdjacentHTML('beforeend',`<div class="meta ${type}">${type==='bot'?'ACE':'You'} • Just now</div>`);
+ M.scrollTop=M.scrollHeight;
+}
+function typing(){M.insertAdjacentHTML('beforeend',`<div id="typing" class="row bot"><div class="typing"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div></div>`);M.scrollTop=M.scrollHeight}
+function stopTyping(){document.getElementById('typing')?.remove()}
+function reply(fn,delay=350){typing();setTimeout(()=>{stopTyping();fn()},delay)}
+function quick(){
+ M.insertAdjacentHTML('beforeend',`<div class="quick-title">How can I help you today?</div>
+ <div class="quick">
+  <button class="qbtn" onclick="support()"><span class="qicon">🎧</span><b>Get Support</b><span class="qsub">Ask a product question</span></button>
+  <button class="qbtn" onclick="improve()"><span class="qicon">💡</span><b>Product Improvement</b><span class="qsub">Share an idea or requirement</span></button>
+  <button class="qbtn" onclick="account()"><span class="qicon">👥</span><b>Contact Account Manager</b><span class="qsub">Request a call or meeting</span></button>
+  <button class="qbtn" onclick="demo()"><span class="qicon">▶</span><b>View a Product Demo</b><span class="qsub">Explore Asite products</span></button>
+ </div>`);
+}
+function start(){
+ M.innerHTML='<div class="day">Today</div>';
+ add('Hi there 👋<br><br><b>I’m ACE, Asite’s AI customer assistant.</b><br>I can answer questions, help with Asite products, capture product feedback, connect you with your Account Manager, or show you a product demo.');
+ reply(()=>{add('What would you like to do?');quick()},500);
+}
+function support(){
+ add('I need help with a feature','user');
+ reply(()=>{add('Sure. Tell me what you are trying to do, or choose a common topic below.');
+ M.insertAdjacentHTML('beforeend',`<div class="chips">
+ <button class="chip" onclick="ask('How do I configure an integration?')">Integrations</button>
+ <button class="chip" onclick="ask('How do I configure workflows?')">Workflows</button>
+ <button class="chip" onclick="ask('How do I manage users?')">User Management</button>
+ <button class="chip" onclick="ask('How do I use AppBuilder?')">AppBuilder</button></div>`);});
+}
+function ask(q){add(q,'user');reply(()=>{add('Based on the available Asite Help content, I found guidance relevant to your question.');M.insertAdjacentHTML('beforeend',`<div class="card"><h4>Relevant guidance</h4><div class="desc">ACE would provide the concise answer here, with the applicable configuration steps and links to the underlying help article.</div><div class="source"><b>Source:</b> Asite Help Centre</div><div class="feedback">Was this helpful? <button class="fb" onclick="thanks()">👍</button><button class="fb" onclick="notHelpful()">👎</button></div></div>
+ <div class="chips"><button class="chip" onclick="ask('Can you explain this in more detail?')">Explain in more detail</button><button class="chip" onclick="handoff()">Talk to a person</button></div>`);});
+}
+function thanks(){add('Yes, that answered my question.','user');reply(()=>add('Glad I could help! If you need anything else, just ask.'))}
+function notHelpful(){add('This did not answer my question.','user');handoff()}
+function handoff(){
+ add('I’d like to talk to a person','user');
+ reply(()=>{add('Absolutely. I’ll connect you with the appropriate Asite team. I’ll also pass the conversation context so you don’t need to repeat the issue.');
+ M.insertAdjacentHTML('beforeend',`<div class="card"><h4>Connect with Asite Support</h4><div class="desc">Your conversation history and information already collected will be shared with the support team.</div><button class="primary" onclick="confirmSupport()">Connect me to Support</button></div>`);});
+}
+function confirmSupport(){add('Connect me to Support','user');reply(()=>add('<b>You’re in the queue.</b><br>An Asite Support representative will continue this conversation when available.'));}
+
+function improve(){
+ add('I want to suggest a product improvement','user');
+ reply(()=>{add('Great. I can capture the requirement and route it to the relevant Product Manager.');
+ M.insertAdjacentHTML('beforeend',`<div class="form"><label>Product / Area</label><select><option>Select a product</option><option>Asite CDE</option><option>AppBuilder</option><option>Integrations</option><option>PMIS</option></select>
+ <label>What would you like to improve?</label><textarea placeholder="Describe the requirement or idea"></textarea>
+ <label>Priority</label><select><option>Select priority</option><option>Critical</option><option>High</option><option>Medium</option><option>Normal</option></select>
+ <label>Expected business value</label><input placeholder="e.g. Reduce manual effort">
+ <button class="primary" onclick="submitImprove()">Submit Product Request</button></div>`);});
+}
+function submitImprove(){add('Submit Product Request','user');reply(()=>add('<div class="card"><h4>Product request submitted ✓</h4><div class="desc">The request has been captured and routed to the relevant Product Manager. A reference can be provided for future follow-up.</div></div>'));}
+
+function account(){
+ add('I want to contact my Account Manager','user');
+ reply(()=>{add('I can route this to the appropriate Account Manager. Please provide a few details.');
+ M.insertAdjacentHTML('beforeend',`<div class="form"><label>Reason for contact</label><select><option>General account assistance</option><option>Commercial discussion</option><option>Product discussion</option><option>Project assistance</option><option>Other</option></select>
+ <label>What do you need help with?</label><textarea placeholder="Briefly describe your request"></textarea>
+ <label>Preferred contact</label><select><option>Email</option><option>Phone call</option><option>Meeting</option></select>
+ <button class="primary" onclick="submitAccount()">Request Account Manager</button></div>`);});
+}
+function submitAccount(){add('Request Account Manager','user');reply(()=>add('<div class="card"><h4>Request received ✓</h4><div class="desc">Your request has been routed to the relevant Account Manager. The conversation context will be available for follow-up.</div></div>'));}
+
+function demo(){
+ add('I want to view a product demo','user');
+ reply(()=>{add('Sure. I can launch the relevant AI-led demo. Which product would you like to explore?');
+ M.insertAdjacentHTML('beforeend',`<div class="chips"><button class="chip" onclick="launch('PMIS')">PMIS</button><button class="chip" onclick="launch('CDE')">CDE</button><button class="chip" onclick="launch('Playbook')">Playbook</button><button class="chip" onclick="launch('AppBuilder')">AppBuilder</button></div>`);});
+}
+function launch(p){add('Show me the '+p+' demo','user');reply(()=>{add(`I found the <b>${p}</b> demo. I can open it in Demonizer without losing this conversation.`);
+M.insertAdjacentHTML('beforeend',`<div class="card"><h4>▶ ${p} — AI-led demo</h4><div class="desc">Interactive product walkthrough • Approx. 3 min</div><button class="primary" onclick="openDemo('${p}')">Launch Demo</button></div>`);});}
+function openDemo(p){add('Launch Demo','user');reply(()=>{add(`The ${p} demo has been launched. When you finish, you can return here and tell ACE if you would like more information.`);
+M.insertAdjacentHTML('beforeend',`<div class="chips"><button class="chip" onclick="interested('${p}')">I’m interested</button><button class="chip" onclick="account()">Contact Account Manager</button></div>`);});}
+function interested(p){add('I’m interested in '+p,'user');reply(()=>add(`<div class="card"><h4>Interest captured ✓</h4><div class="desc">Your interest in ${p} has been recorded. The relevant Account Manager can follow up using this conversation context.</div></div>`));}
+function restart(){start()}
+start();
+</script>
+</body>
+</html>
